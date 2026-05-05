@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Painel administrativo | Volante</title>
+
+  <link rel="stylesheet" href="./admin.css" />
+  <link rel="icon" href="./favicon.png" />
+</head>
+
+<body>
+  <main class="app">
+    <header class="topo">
+      <div class="brand">
+        <img src="./logo.png" class="logo" alt="Volante" />
+        <span>Volante</span>
+      </div>
+
+      <h1>PAINEL ADMINISTRATIVO</h1>
+
+      <div class="top-actions">
+        <input id="busca" type="text" placeholder="Buscar..." />
+        <button id="btnAtualizar">Atualizar</button>
+        <button id="btnSair" class="sair">Sair</button>
+      </div>
+    </header>
+
+    <section id="resumo" class="resumo"></section>
+
+    <section class="cabecalho-lista">
+      <div onclick="ordenar('tipo')">Tipo</div>
+      <div onclick="ordenar('titulo')">Título</div>
+      <div>Descrição</div>
+      <div onclick="ordenar('email')">Usuário</div>
+      <div>Local</div>
+      <div onclick="ordenar('data')">Data</div>
+      <div onclick="ordenar('status')">Status</div>
+      <div>Ações</div>
+      <div>Fotos</div>
+    </section>
+
+    <section id="lista" class="lista"></section>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <button id="fecharModal" class="fechar-modal">×</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./admin.js"></script>
+</body>
+</html>
