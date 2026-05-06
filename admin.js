@@ -6,7 +6,6 @@ import {
   getDocs,
   doc,
   updateDoc,
-  deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import {
@@ -39,6 +38,7 @@ const guard = document.getElementById("guard");
 
 let dados = [];
 let filtroAtual = "TODOS";
+let itemExpandido = null;
 let ordenacao = { campo: "data", asc: false };
 
 onAuthStateChanged(auth, async (user) => {
@@ -121,35 +121,48 @@ function render() {
 function renderResumo() {
   resumo.innerHTML = `
     <button class="card-resumo TODOS ${filtroAtual === "TODOS" ? "ativo" : ""}" onclick="filtrarResumo('TODOS')">
-      <span>Total</span><strong>${dados.length}</strong>
+      <span>Total</span>
+      <strong>${dados.length}</strong>
     </button>
 
     <button class="card-resumo PENDENTE ${filtroAtual === "PENDENTE" ? "ativo" : ""}" onclick="filtrarResumo('PENDENTE')">
-      <span>Pendentes</span><strong>${contar("PENDENTE")}</strong>
+      <span>Pendentes</span>
+      <strong>${contar("PENDENTE")}</strong>
     </button>
 
     <button class="card-resumo DEVOLVIDO ${filtroAtual === "DEVOLVIDO" ? "ativo" : ""}" onclick="filtrarResumo('DEVOLVIDO')">
-      <span>Devolvidos</span><strong>${contar("DEVOLVIDO")}</strong>
+      <span>Devolvidos</span>
+      <strong>${contar("DEVOLVIDO")}</strong>
     </button>
 
     <button class="card-resumo ATIVO ${filtroAtual === "ATIVO" ? "ativo" : ""}" onclick="filtrarResumo('ATIVO')">
-      <span>Ativos</span><strong>${contar("ATIVO")}</strong>
+      <span>Ativos</span>
+      <strong>${contar("ATIVO")}</strong>
     </button>
 
     <button class="card-resumo INATIVO ${filtroAtual === "INATIVO" ? "ativo" : ""}" onclick="filtrarResumo('INATIVO')">
-      <span>Inativos</span><strong>${contar("INATIVO")}</strong>
+      <span>Inativos</span>
+      <strong>${contar("INATIVO")}</strong>
     </button>
   `;
 }
 
 window.filtrarResumo = function (status) {
   filtroAtual = status;
+  itemExpandido = null;
   render();
 };
 
 window.ordenar = function (campo) {
   ordenacao.asc = ordenacao.campo === campo ? !ordenacao.asc : true;
   ordenacao.campo = campo;
+  itemExpandido = null;
+  render();
+};
+
+window.alternarDetalhe = function (id, colecao) {
+  const chave = `${colecao}_${id}`;
+  itemExpandido = itemExpandido === chave ? null : chave;
   render();
 };
 
@@ -271,51 +284,50 @@ function card(item) {
   );
 
   const tipoClasse = item.tipo === "EVENTO" ? "evento" : "anuncio";
+  const chave = `${item.colecao}_${item.id}`;
+  const expandido = itemExpandido === chave;
 
   return `
-    <article class="item">
-      <div>
-        <span class="tipo ${tipoClasse}">${escapar(item.tipo)}</span>
+    <article class="item ${expandido ? "expandido" : ""}">
+      <div class="item-linha">
+        <div>
+          <span class="tipo ${tipoClasse}">${escapar(item.tipo)}</span>
+        </div>
+
+        <div class="titulo" onclick="alternarDetalhe('${item.id}', '${item.colecao}')">
+          ${titulo}
+        </div>
+
+        <div class="descricao">${descricao}</div>
+
+        <div class="usuario">${email}</div>
+
+        <div class="local">${escapar(local)}</div>
+
+        <div class="data">${data}</div>
+
+        <div>
+          <span class="status ${status}">${status}</span>
+        </div>
+
+        <div class="botoes">
+          <button class="btn-aprovar" title="Aprovar" onclick="aprovar('${item.id}','${item.colecao}')">✓</button>
+          <button class="btn-devolver" title="Devolver" onclick="devolver('${item.id}','${item.colecao}')">↩</button>
+          <button class="btn-inativar" title="Inativar" onclick="inativar('${item.id}','${item.colecao}')">−</button>
+        </div>
+
+        <div class="fotos">
+          ${fotos.map((foto) => `<img src="${escapar(foto)}" alt="Foto" />`).join("")}
+        </div>
       </div>
 
-      <div class="titulo" onclick="abrirDetalhe('${item.id}', '${item.colecao}')">
-        ${titulo}
-      </div>
-
-      <div class="descricao">${descricao}</div>
-
-      <div class="usuario">${email}</div>
-
-      <div class="local">${escapar(local)}</div>
-
-      <div class="data">${data}</div>
-
-      <div>
-        <span class="status ${status}">${status}</span>
-      </div>
-
-      <div class="botoes">
-        <button class="btn-aprovar" title="Aprovar" onclick="aprovar('${item.id}','${item.colecao}')">✓</button>
-        <button class="btn-devolver" title="Devolver" onclick="devolver('${item.id}','${item.colecao}')">↩</button>
-        <button class="btn-inativar" title="Inativar" onclick="inativar('${item.id}','${item.colecao}')">−</button>
-        <button class="btn-excluir" title="Excluir" onclick="excluirDaBase('${item.id}','${item.colecao}')">×</button>
-      </div>
-
-      <div class="fotos">
-        ${fotos.map((foto) => `<img src="${escapar(foto)}" alt="Foto" />`).join("")}
-      </div>
+      ${expandido ? detalheExpandido(item) : ""}
     </article>
   `;
 }
 
-window.abrirDetalhe = function (id, colecao) {
-  const item = dados.find((d) => d.id === id && d.colecao === colecao);
-  if (!item) return;
-
-  const status = normalizarStatus(item.status);
+function detalheExpandido(item) {
   const fotos = Array.isArray(item.fotos) ? item.fotos : [];
-
-  const titulo = escapar(item.titulo || item.nome || "Sem título");
 
   const descricao = escapar(
     item.descricao ||
@@ -325,8 +337,10 @@ window.abrirDetalhe = function (id, colecao) {
     item.observação ||
     item.texto ||
     item.sobre ||
-    ""
+    "Sem descrição."
   );
+
+  const titulo = escapar(item.titulo || item.nome || "Sem título");
 
   const email = escapar(
     item.email ||
@@ -337,58 +351,55 @@ window.abrirDetalhe = function (id, colecao) {
     "Não informado"
   );
 
+  const telefone = escapar(item.telefone || item.whatsapp || "Não informado");
+  const marca = escapar(item.marca || "Não informado");
+  const modelo = escapar(item.modelo || "Não informado");
+  const ano = escapar(item.ano || item.anoFabricacao || "Não informado");
+  const preco = escapar(item.preco || item.valor || "Não informado");
   const cidade = escapar(item.cidade || "");
   const estado = escapar(item.estado || "");
+  const local = cidade || estado ? `${cidade}${cidade && estado ? " / " : ""}${estado}` : "Não informado";
+  const status = normalizarStatus(item.status);
 
-  const data = formatarData(
-    item.criadoEm ||
-    item.createdAt ||
-    item.atualizadoEm ||
-    item.dataCriacao
-  );
+  const motivoDevolucao = escapar(item.motivoDevolucao || "");
+  const motivoInativacao = escapar(item.motivoInativacao || "");
 
-  const modal = document.getElementById("modal");
-  const modalBody = document.getElementById("modalBody");
+  return `
+    <div class="detalhe-expandido">
+      <div class="detalhe-grid">
+        <div class="detalhe-campo"><span>Título</span><strong>${titulo}</strong></div>
+        <div class="detalhe-campo"><span>Status</span><strong>${status}</strong></div>
+        <div class="detalhe-campo"><span>Usuário</span><strong>${email}</strong></div>
+        <div class="detalhe-campo"><span>Telefone</span><strong>${telefone}</strong></div>
+        <div class="detalhe-campo"><span>Marca</span><strong>${marca}</strong></div>
+        <div class="detalhe-campo"><span>Modelo</span><strong>${modelo}</strong></div>
+        <div class="detalhe-campo"><span>Ano</span><strong>${ano}</strong></div>
+        <div class="detalhe-campo"><span>Preço</span><strong>${preco}</strong></div>
+        <div class="detalhe-campo"><span>Local</span><strong>${local}</strong></div>
+        <div class="detalhe-campo"><span>Coleção</span><strong>${escapar(item.colecao)}</strong></div>
+        <div class="detalhe-campo"><span>ID</span><strong>${escapar(item.id)}</strong></div>
+        <div class="detalhe-campo"><span>Fotos</span><strong>${fotos.length}</strong></div>
+      </div>
 
-  if (!modal || !modalBody) return;
+      <div class="detalhe-descricao">${descricao}</div>
 
-  modalBody.innerHTML = `
-    <h2>${titulo}</h2>
+      ${
+        motivoDevolucao
+          ? `<div class="detalhe-descricao"><strong>Motivo da devolução:</strong><br>${motivoDevolucao}</div>`
+          : ""
+      }
 
-    <div class="modal-grid">
-      <p><strong>Tipo:</strong> ${escapar(item.tipo)}</p>
-      <p><strong>Status:</strong> ${status}</p>
-      <p><strong>Usuário:</strong> ${email}</p>
-      <p><strong>Local:</strong> ${cidade}${cidade && estado ? " / " : ""}${estado}</p>
-      <p><strong>Data:</strong> ${data}</p>
-    </div>
+      ${
+        motivoInativacao
+          ? `<div class="detalhe-descricao"><strong>Motivo da inativação:</strong><br>${motivoInativacao}</div>`
+          : ""
+      }
 
-    <p class="modal-descricao">${descricao}</p>
-
-    <div class="modal-fotos">
-      ${fotos.map((foto) => `<img src="${escapar(foto)}" alt="Foto" />`).join("")}
+      <div class="detalhe-fotos">
+        ${fotos.map((foto) => `<img src="${escapar(foto)}" alt="Foto" />`).join("")}
+      </div>
     </div>
   `;
-
-  modal.classList.remove("hidden");
-};
-
-const fecharModal = document.getElementById("fecharModal");
-
-if (fecharModal) {
-  fecharModal.onclick = function () {
-    document.getElementById("modal")?.classList.add("hidden");
-  };
-}
-
-const modal = document.getElementById("modal");
-
-if (modal) {
-  modal.addEventListener("click", (event) => {
-    if (event.target === modal) {
-      modal.classList.add("hidden");
-    }
-  });
 }
 
 window.aprovar = async function (id, colecao) {
@@ -428,17 +439,6 @@ window.inativar = async function (id, colecao) {
   await carregar();
 };
 
-window.excluirDaBase = async function (id, colecao) {
-  const confirmar = confirm(
-    "Excluir definitivamente da base? Esta ação não pode ser desfeita."
-  );
-
-  if (!confirmar) return;
-
-  await deleteDoc(doc(db, colecao, id));
-  await carregar();
-};
-
 function normalizarStatus(status) {
   const s = String(status || "PENDENTE").trim().toUpperCase();
 
@@ -459,6 +459,7 @@ function obterTempo(item) {
   if (data?.seconds) return data.seconds * 1000;
 
   const tentativa = new Date(data);
+
   return isNaN(tentativa.getTime()) ? 0 : tentativa.getTime();
 }
 
@@ -487,4 +488,4 @@ function escapar(valor) {
     .replaceAll("'", "&#039;");
 }
 
-// admin-volante-light-ux-2026
+// admin-volante-titulo-expansivel-2026
