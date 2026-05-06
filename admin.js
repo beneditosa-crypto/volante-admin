@@ -35,6 +35,7 @@ const resumo = document.getElementById("resumo");
 const btnAtualizar = document.getElementById("btnAtualizar");
 const btnSair = document.getElementById("btnSair");
 const buscaInput = document.getElementById("busca");
+const guard = document.getElementById("guard");
 
 let dados = [];
 let filtroAtual = "TODOS";
@@ -54,6 +55,7 @@ onAuthStateChanged(auth, async (user) => {
     return;
   }
 
+  esconderGuard();
   await carregar();
 });
 
@@ -66,6 +68,10 @@ btnSair.addEventListener("click", async () => {
 
 if (buscaInput) {
   buscaInput.addEventListener("input", render);
+}
+
+function esconderGuard() {
+  guard?.classList.add("hidden");
 }
 
 async function carregar() {
@@ -289,10 +295,10 @@ function card(item) {
       </div>
 
       <div class="botoes">
-        <button class="btn-aprovar" title="Aprovar" onclick="aprovar('${item.id}','${item.colecao}')">✔</button>
+        <button class="btn-aprovar" title="Aprovar" onclick="aprovar('${item.id}','${item.colecao}')">✓</button>
         <button class="btn-devolver" title="Devolver" onclick="devolver('${item.id}','${item.colecao}')">↩</button>
-        <button class="btn-inativar" title="Inativar" onclick="inativar('${item.id}','${item.colecao}')">⛔</button>
-        <button class="btn-excluir" title="Excluir" onclick="excluirDaBase('${item.id}','${item.colecao}')">🗑</button>
+        <button class="btn-inativar" title="Inativar" onclick="inativar('${item.id}','${item.colecao}')">−</button>
+        <button class="btn-excluir" title="Excluir" onclick="excluirDaBase('${item.id}','${item.colecao}')">×</button>
       </div>
 
       <div class="fotos">
@@ -481,4 +487,4 @@ function escapar(valor) {
     .replaceAll("'", "&#039;");
 }
 
-// versao-revisada-final-admin-2026
+// admin-volante-light-ux-2026
