@@ -245,6 +245,7 @@ function obterValorOrdenacao(item, campo) {
 function card(item) {
   const status = normalizarStatus(item.status);
   const fotos = Array.isArray(item.fotos) ? item.fotos : [];
+  const destaque = item.destaque === true;
 
   const titulo = escapar(item.titulo || item.nome || "Sem título");
 
@@ -296,6 +297,7 @@ function card(item) {
 
         <div class="titulo" onclick="alternarDetalhe('${item.id}', '${item.colecao}')">
           ${titulo}
+          ${destaque ? `<span style="margin-left:6px;">⭐</span>` : ""}
         </div>
 
         <div class="descricao">${descricao}</div>
@@ -312,8 +314,24 @@ function card(item) {
 
         <div class="botoes">
           <button class="btn-aprovar" title="Aprovar" onclick="aprovar('${item.id}','${item.colecao}')">✓</button>
+
           <button class="btn-devolver" title="Devolver" onclick="devolver('${item.id}','${item.colecao}')">↩</button>
+
           <button class="btn-inativar" title="Inativar" onclick="inativar('${item.id}','${item.colecao}')">−</button>
+
+          ${
+            item.colecao === "anuncios"
+              ? `
+            <button
+              class="${destaque ? "btn-inativar" : "btn-aprovar"}"
+              title="${destaque ? "Remover destaque" : "Destacar"}"
+              onclick="alternarDestaque('${item.id}', ${destaque})"
+            >
+              ${destaque ? "☆" : "⭐"}
+            </button>
+          `
+              : ""
+          }
         </div>
 
         <div class="fotos">
@@ -360,6 +378,7 @@ function detalheExpandido(item) {
   const estado = escapar(item.estado || "");
   const local = cidade || estado ? `${cidade}${cidade && estado ? " / " : ""}${estado}` : "Não informado";
   const status = normalizarStatus(item.status);
+  const destaque = item.destaque === true ? "SIM" : "NÃO";
 
   const motivoDevolucao = escapar(item.motivoDevolucao || "");
   const motivoInativacao = escapar(item.motivoInativacao || "");
@@ -369,6 +388,7 @@ function detalheExpandido(item) {
       <div class="detalhe-grid">
         <div class="detalhe-campo"><span>Título</span><strong>${titulo}</strong></div>
         <div class="detalhe-campo"><span>Status</span><strong>${status}</strong></div>
+        <div class="detalhe-campo"><span>Destaque</span><strong>${destaque}</strong></div>
         <div class="detalhe-campo"><span>Usuário</span><strong>${email}</strong></div>
         <div class="detalhe-campo"><span>Telefone</span><strong>${telefone}</strong></div>
         <div class="detalhe-campo"><span>Marca</span><strong>${marca}</strong></div>
@@ -439,6 +459,14 @@ window.inativar = async function (id, colecao) {
   await carregar();
 };
 
+window.alternarDestaque = async function (id, destaqueAtual) {
+  await updateDoc(doc(db, "anuncios", id), {
+    destaque: !destaqueAtual,
+  });
+
+  await carregar();
+};
+
 function normalizarStatus(status) {
   const s = String(status || "PENDENTE").trim().toUpperCase();
 
@@ -488,4 +516,4 @@ function escapar(valor) {
     .replaceAll("'", "&#039;");
 }
 
-// admin-volante-titulo-expansivel-2026
+// admin-volante-destaques-2026
