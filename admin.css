@@ -332,6 +332,16 @@ body {
   background: #64748b;
 }
 
+.btn-destaque {
+  background: #d1d5db;
+  color: #475569;
+}
+
+.btn-destaque-ativo {
+  background: #d97706;
+  color: #ffffff;
+}
+
 .fotos {
   display: flex;
   gap: 5px;
