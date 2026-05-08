@@ -287,6 +287,7 @@ function card(item) {
   const tipoClasse = item.tipo === "EVENTO" ? "evento" : "anuncio";
   const chave = `${item.colecao}_${item.id}`;
   const expandido = itemExpandido === chave;
+  const podeDestacar = item.colecao === "anuncios" && status === "ATIVO";
 
   return `
     <article class="item ${expandido ? "expandido" : ""}">
@@ -297,7 +298,6 @@ function card(item) {
 
         <div class="titulo" onclick="alternarDetalhe('${item.id}', '${item.colecao}')">
           ${titulo}
-          ${destaque ? `<span style="margin-left:6px;">⭐</span>` : ""}
         </div>
 
         <div class="descricao">${descricao}</div>
@@ -314,22 +314,20 @@ function card(item) {
 
         <div class="botoes">
           <button class="btn-aprovar" title="Aprovar" onclick="aprovar('${item.id}','${item.colecao}')">✓</button>
-
           <button class="btn-devolver" title="Devolver" onclick="devolver('${item.id}','${item.colecao}')">↩</button>
-
           <button class="btn-inativar" title="Inativar" onclick="inativar('${item.id}','${item.colecao}')">−</button>
 
           ${
-            item.colecao === "anuncios"
+            podeDestacar
               ? `
-            <button
-              class="${destaque ? "btn-inativar" : "btn-aprovar"}"
-              title="${destaque ? "Remover destaque" : "Destacar"}"
-              onclick="alternarDestaque('${item.id}', ${destaque})"
-            >
-              ${destaque ? "☆" : "⭐"}
-            </button>
-          `
+                <button
+                  class="${destaque ? "btn-destaque-ativo" : "btn-destaque"}"
+                  title="${destaque ? "Remover destaque" : "Destacar"}"
+                  onclick="alternarDestaque('${item.id}', ${destaque})"
+                >
+                  ${destaque ? "★" : "☆"}
+                </button>
+              `
               : ""
           }
         </div>
@@ -442,6 +440,7 @@ window.devolver = async function (id, colecao) {
 
   await updateDoc(doc(db, colecao, id), {
     status: "DEVOLVIDO",
+    destaque: false,
     motivoDevolucao: motivo.trim(),
   });
 
@@ -453,6 +452,7 @@ window.inativar = async function (id, colecao) {
 
   await updateDoc(doc(db, colecao, id), {
     status: "INATIVO",
+    destaque: false,
     motivoInativacao: motivo?.trim() || "Inativado pelo administrador",
   });
 
@@ -516,4 +516,4 @@ function escapar(valor) {
     .replaceAll("'", "&#039;");
 }
 
-// admin-volante-destaques-2026
+// admin-volante-destaques-apos-aprovacao-2026
